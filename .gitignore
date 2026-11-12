@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.tlog
+*.tlog.raw
+mav.parm
+logs/
+.docker/

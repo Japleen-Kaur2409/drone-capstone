@@ -1,0 +1,13 @@
+services:
+  sitl:
+    build: ./docker/sitl
+    image: drone-capstone/ardupilot-sitl:latest
+    container_name: sitl
+    environment:
+      - HOME_LOC=${HOME_LOC:--35.363261,149.165230,584,353}
+      - SPEEDUP=${SPEEDUP:-1}
+    ports:
+      - "14550:14550"   # GCS (QGroundControl / Mission Planner: TCP 127.0.0.1:14550)
+      - "14551:14551"   # Python scripts (tcp:127.0.0.1:14551)
+    stdin_open: true    # `docker attach sitl` gives the MAVProxy console
+    tty: true
