@@ -2,3 +2,5 @@ pymavlink
 MAVProxy
 opencv-contrib-python
 numpy
+pyyaml
+pytest

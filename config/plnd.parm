@@ -1,0 +1,18 @@
+# Precision landing from our ArUco vision node (MAVLink LANDING_TARGET)
+# PLND_TYPE 1 = MAVLink, PLND_EST_TYPE 1 = Kalman filter
+PLND_ENABLED     1
+PLND_TYPE        1
+PLND_EST_TYPE    1
+# If the target is lost low down, climb and retry instead of landing blind
+PLND_STRICT      1
+PLND_RET_MAX     4
+PLND_TIMEOUT     4
+# Only descend once within 2.5 m of the target
+PLND_XY_DIST_MAX 2.5
+PLND_ALT_MIN     0.3
+PLND_ALT_MAX     20
+# Vision pipeline latency (s)
+PLND_LAG         0.05
+# Descent speeds (cm/s)
+LAND_SPEED       40
+LAND_SPEED_HIGH  120

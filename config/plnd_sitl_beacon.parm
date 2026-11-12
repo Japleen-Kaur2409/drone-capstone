@@ -1,0 +1,10 @@
+# Sanity check: ArduPilot's built-in simulated beacon instead of our vision node.
+# Use with PARAMS=plnd.parm,plnd_sitl_beacon.parm
+# Beacon sits ~2 m N, ~4.5 m E of the default home.
+PLND_TYPE        4
+SIM_PLD_ENABLE   1
+SIM_PLD_LAT      -35.3632400
+SIM_PLD_LON      149.1652800
+SIM_PLD_HEIGHT   0
+SIM_PLD_ALT_LMT  20
+SIM_PLD_DIST_LMT 10

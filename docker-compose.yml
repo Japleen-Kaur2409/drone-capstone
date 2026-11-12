@@ -6,6 +6,9 @@ services:
     environment:
       - HOME_LOC=${HOME_LOC:--35.363261,149.165230,584,353}
       - SPEEDUP=${SPEEDUP:-1}
+      - PARAMS=${PARAMS:-plnd.parm}
+    volumes:
+      - ./config:/config:ro
     ports:
       - "14550:14550"   # GCS (QGroundControl / Mission Planner: TCP 127.0.0.1:14550)
       - "14551:14551"   # Python scripts (tcp:127.0.0.1:14551)

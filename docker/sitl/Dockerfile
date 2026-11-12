@@ -1,7 +1,7 @@
 # ArduPilot Copter SITL + MAVProxy, built natively for arm64 (Apple Silicon) or amd64.
 FROM ubuntu:22.04
 
-ARG COPTER_TAG=Copter-4.5.7
+ARG COPTER_TAG=Copter-4.7.2
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y --no-install-recommends \

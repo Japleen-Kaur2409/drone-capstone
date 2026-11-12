@@ -1,0 +1,13 @@
+name: rough
+deck:
+  north: 6.0
+  east: 4.0
+  heading_deg: 60
+motion:
+  heave: [[0.35, 6.5, 0], [0.10, 2.9, 75]]
+  roll:  [[10.0, 7.5, 0], [3.0, 2.8, 50]]
+  pitch: [[6.0, 9.0, 15], [2.0, 3.6, 120]]
+  surge: [[0.4, 11.0, 0]]
+  sway:  [[0.8, 9.0, 90], [0.2, 3.0, 30]]
+  drift_ne: [0.0, 0.0]
+approach_error_m: 2.5

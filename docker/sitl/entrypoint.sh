@@ -5,6 +5,14 @@ set -euo pipefail
 HOME_LOC="${HOME_LOC:--35.363261,149.165230,584,353}"   # lat,lon,alt(m),heading
 MODEL="${MODEL:-quad}"
 SPEEDUP="${SPEEDUP:-1}"
+# Extra param files from the mounted ./config dir, comma-separated (e.g. plnd.parm)
+PARAMS="${PARAMS:-plnd.parm}"
+
+DEFAULTS=/ardupilot/Tools/autotest/default_params/copter.parm
+IFS=',' read -ra extra <<< "$PARAMS"
+for f in "${extra[@]}"; do
+    [ -n "$f" ] && DEFAULTS="$DEFAULTS,/config/$f"
+done
 
 cd /ardupilot
 mkdir -p /sitl && cd /sitl
@@ -13,7 +21,7 @@ mkdir -p /sitl && cd /sitl
     --model "$MODEL" \
     --home "$HOME_LOC" \
     --speedup "$SPEEDUP" \
-    --defaults /ardupilot/Tools/autotest/default_params/copter.parm \
+    --defaults "$DEFAULTS" \
     -w -I0 &
 SITL_PID=$!
 trap 'kill $SITL_PID 2>/dev/null || true' EXIT

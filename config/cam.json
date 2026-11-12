@@ -1,0 +1,9 @@
+{
+  "_comment": "Simulated downward camera: 640x480, ~70 deg HFOV, no distortion. Replace with real calibration output.",
+  "width": 640,
+  "height": 480,
+  "K": [[457.0, 0.0, 319.5],
+        [0.0, 457.0, 239.5],
+        [0.0, 0.0, 1.0]],
+  "dist": [0.0, 0.0, 0.0, 0.0, 0.0]
+}
