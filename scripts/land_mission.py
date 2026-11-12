@@ -92,6 +92,8 @@ def main():
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--rate", type=float, default=15.0, help="camera frame rate (sim time)")
     p.add_argument("--timeout", type=float, default=240.0)
+    p.add_argument("--no-vision", action="store_true",
+                   help="baseline: don't send LANDING_TARGET (GPS-only landing)")
     p.add_argument("--show", action="store_true")
     p.add_argument("--log", default="logs/landings.csv")
     args = p.parse_args()
@@ -151,7 +153,8 @@ def main():
                 if first_det_alt is None:
                     first_det_alt = v.alt
                     print(f"  first detection at {v.alt:.1f} m")
-                send_landing_target(v.m, det, v.boot_ms * 1000)
+                if not args.no_vision:
+                    send_landing_target(v.m, det, v.boot_ms * 1000)
             if args.show:
                 vis = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
                 if det:
@@ -196,6 +199,7 @@ def main():
         "time": datetime.now().isoformat(timespec="seconds"),
         "scenario": deck.name,
         "stabilised": int(args.stabilised),
+        "vision": int(not args.no_vision),
         "seed": args.seed,
         "result": result,
         "error_m": round(err, 3),

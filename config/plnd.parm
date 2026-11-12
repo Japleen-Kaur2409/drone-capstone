@@ -13,6 +13,6 @@ PLND_ALT_MIN     0.3
 PLND_ALT_MAX     20
 # Vision pipeline latency (s)
 PLND_LAG         0.05
-# Descent speeds (cm/s)
-LAND_SPEED       40
-LAND_SPEED_HIGH  120
+# Descent speeds (m/s; 4.7 renamed LAND_SPEED/LAND_SPEED_HIGH in cm/s to these)
+LAND_SPD_MS      0.4
+LAND_SPD_HIGH_MS 1.2

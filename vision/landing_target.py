@@ -1,4 +1,4 @@
-"""Detection -> MAVLink LANDING_TARGET, matching ArduPilot's AC_PrecLand_Companion decoding.
+"""Detection -> MAVLink LANDING_TARGET, matching ArduPilot's AC_PrecLand_MAVLink decoding.
 
 ArduPilot (angle mode, position_valid=0) rebuilds the body-frame line of sight as
     los_body = normalize(-tan(angle_y), tan(angle_x), 1)
@@ -18,7 +18,7 @@ def target_angles(tvec_cam):
 
 
 def ardupilot_los_body(angle_x, angle_y):
-    """Mirror of AC_PrecLand_Companion::handle_msg (angle mode); used by tests."""
+    """Mirror of AC_PrecLand_MAVLink::handle_msg (angle mode, MAV_FRAME_BODY_FRD); used by tests."""
     v = np.array([-math.tan(angle_y), math.tan(angle_x), 1.0])
     return v / np.linalg.norm(v)
 
