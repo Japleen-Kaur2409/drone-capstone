@@ -18,11 +18,11 @@ run() {
 }
 
 for seed in $SEEDS; do
-    run --scenario sim/scenarios/calm.yaml --seed "$seed" --no-vision
-    run --scenario sim/scenarios/calm.yaml --seed "$seed"
+    run --scenario sim/scenarios/calm.json --seed "$seed" --no-vision
+    run --scenario sim/scenarios/calm.json --seed "$seed"
     for s in moderate rough; do
-        run --scenario "sim/scenarios/$s.yaml" --seed "$seed"
-        run --scenario "sim/scenarios/$s.yaml" --seed "$seed" --stabilised
+        run --scenario "sim/scenarios/$s.json" --seed "$seed"
+        run --scenario "sim/scenarios/$s.json" --seed "$seed" --stabilised
     done
 done
 

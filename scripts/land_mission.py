@@ -3,7 +3,7 @@
 takeoff -> fly to the deck with GPS-level error -> LAND (ArduPilot precland uses our
 LANDING_TARGET) -> score touchdown vs pad centre -> append a row to logs/landings.csv.
 
-    python -m scripts.land_mission --scenario sim/scenarios/moderate.yaml --stabilised
+    python -m scripts.land_mission --scenario sim/scenarios/moderate.json --stabilised
 """
 import argparse
 import csv
@@ -17,10 +17,10 @@ import cv2
 import numpy as np
 from pymavlink import mavutil
 
-from sim.camera import DeckCamera
+from sim.camera import DeckCamera, rot_rpy
 from sim.deck import DeckMotion
 from vision.detector import PadDetector
-from vision.landing_target import send_landing_target
+from vision.landing_target import ardupilot_los_body, send_landing_target, target_angles
 from vision.pad import Camera, Pad
 
 MSG_RATES_HZ = {
@@ -84,7 +84,7 @@ class Vehicle:
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--conn", default="tcp:127.0.0.1:14551")
-    p.add_argument("--scenario", default="sim/scenarios/calm.yaml")
+    p.add_argument("--scenario", default="sim/scenarios/calm.json")
     p.add_argument("--stabilised", action="store_true", help="2-DOF platform on")
     p.add_argument("--stab-gain", type=float, default=0.85,
                    help="fraction of deck roll/pitch the platform cancels")
@@ -96,6 +96,7 @@ def main():
                    help="baseline: don't send LANDING_TARGET (GPS-only landing)")
     p.add_argument("--show", action="store_true")
     p.add_argument("--log", default="logs/landings.csv")
+    p.add_argument("--trace", help="per-frame CSV (pose vs pad, detections) for debugging")
     args = p.parse_args()
 
     cam = Camera.load("config/cam.json")
@@ -104,6 +105,14 @@ def main():
     camera = DeckCamera(cam, pad, seed=args.seed)
     detector = PadDetector(cam, pad)
     rng = np.random.default_rng(args.seed)
+
+    trace = None
+    if args.trace:
+        os.makedirs(os.path.dirname(args.trace) or ".", exist_ok=True)
+        trace_f = open(args.trace, "w", newline="")
+        trace = csv.writer(trace_f)
+        # rel_n/rel_e: vehicle minus pad centre; est_err: vision estimate error as ArduPilot decodes it
+        trace.writerow(["t", "phase", "alt", "rel_n", "rel_e", "det", "ids", "est_err_m"])
 
     v = Vehicle(args.conn)
     print(f"Connected. Scenario={deck.name} stabilised={args.stabilised}")
@@ -148,6 +157,16 @@ def main():
                                 (v.att.roll, v.att.pitch, v.att.yaw), deck_pos, deck_rpy)
             det = detector.detect(img)
             frames += 1
+            if trace:
+                est = ""
+                if det:
+                    ax, ay, dist = target_angles(det.tvec)
+                    los = rot_rpy(v.att.roll, v.att.pitch, v.att.yaw) @ ardupilot_los_body(ax, ay)
+                    est_ne = np.array([v.pos.x, v.pos.y]) + los[:2] * dist
+                    est = round(float(np.hypot(*(est_ne - deck_pos[:2]))), 3)
+                trace.writerow([round(v.t - t_start, 2), phase, round(v.alt, 2),
+                                round(v.pos.x - deck_pos[0], 3), round(v.pos.y - deck_pos[1], 3),
+                                int(det is not None), det.ids if det else "", est])
             if det:
                 dets += 1
                 if first_det_alt is None:

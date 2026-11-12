@@ -7,10 +7,10 @@ roll and pitch (it cannot remove heave or translation).
 SITL limitation: the simulated vehicle still touches down on flat ground at NED z=0, so heave and
 tilt only affect what the camera sees (and the touchdown score), not the contact physics.
 """
+import json
 import math
 
 import numpy as np
-import yaml
 
 
 def _sines(terms, t):
@@ -28,7 +28,7 @@ class DeckMotion:
     @classmethod
     def load(cls, path, stab_gain=0.0):
         with open(path) as f:
-            return cls(yaml.safe_load(f), stab_gain)
+            return cls(json.load(f), stab_gain)
 
     @property
     def name(self):

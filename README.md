@@ -39,8 +39,8 @@ Pixhawk 6C. Change it with `docker-compose build --build-arg COPTER_TAG=Copter-4
 ```bash
 .venv/bin/python -m pytest                          # offline: render -> detect -> LANDING_TARGET -> ArduPilot decode
 docker-compose up -d sitl
-.venv/bin/python -m scripts.land_mission --scenario sim/scenarios/calm.yaml --show
-.venv/bin/python -m scripts.land_mission --scenario sim/scenarios/rough.yaml --stabilised
+.venv/bin/python -m scripts.land_mission --scenario sim/scenarios/calm.json --show
+.venv/bin/python -m scripts.land_mission --scenario sim/scenarios/rough.json --stabilised
 ```
 
 Each run appends a scored row (touchdown error vs pad centre, descent speed, deck tilt, detection

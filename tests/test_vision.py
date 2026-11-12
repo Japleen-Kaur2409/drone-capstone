@@ -86,7 +86,7 @@ def test_landing_target_packs_and_decodes(setup):
 
 @pytest.mark.parametrize("name", ["calm", "moderate", "rough"])
 def test_platform_reduces_tilt(name):
-    path = f"sim/scenarios/{name}.yaml"
+    path = f"sim/scenarios/{name}.json"
     raw, stab = DeckMotion.load(path), DeckMotion.load(path, stab_gain=0.85)
     ts = np.linspace(0, 60, 600)
     assert max(stab.tilt_deg(t) for t in ts) < 0.2 * max(raw.tilt_deg(t) for t in ts)

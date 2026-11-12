@@ -1,0 +1,28 @@
+{
+  "_comment": "Deck at north/east m from home. motion terms: [amplitude, period_s, phase_deg]; roll/pitch in deg, heave/surge/sway in m; drift_ne in m/s. approach_error_m: GPS-level aim error.",
+  "name": "calm",
+  "deck": {
+    "north": 6.0,
+    "east": 4.0,
+    "heading_deg": 0
+  },
+  "motion": {
+    "heave": [
+      [0.03, 8.0, 0]
+    ],
+    "roll": [
+      [1.0, 8.0, 0]
+    ],
+    "pitch": [
+      [0.5, 9.5, 30]
+    ],
+    "surge": [
+      [0.05, 12.0, 0]
+    ],
+    "sway": [
+      [0.05, 10.0, 90]
+    ],
+    "drift_ne": [0.0, 0.0]
+  },
+  "approach_error_m": 1.5
+}
