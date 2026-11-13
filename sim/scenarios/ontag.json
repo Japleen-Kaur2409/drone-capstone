@@ -1,0 +1,13 @@
+{
+  "_comment": "Acceptance test: pad on a still deck (harbour / ground test). The drone arrives 1.5 m off and must touch down with its centre inside the 15 cm landing tag (marker id 1). Used by ./sim.sh verify.",
+  "name": "ontag",
+  "deck": {
+    "north": 6.0,
+    "east": 4.0,
+    "heading_deg": 0
+  },
+  "motion": {
+    "drift_ne": [0.0, 0.0]
+  },
+  "approach_error_m": 1.5
+}

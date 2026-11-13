@@ -6,7 +6,7 @@ HOME_LOC="${HOME_LOC:--35.363261,149.165230,584,353}"   # lat,lon,alt(m),heading
 MODEL="${MODEL:-quad}"
 SPEEDUP="${SPEEDUP:-1}"
 # Extra param files from the mounted ./config dir, comma-separated (e.g. plnd.parm)
-PARAMS="${PARAMS:-plnd.parm}"
+PARAMS="${PARAMS:-plnd.parm,sitl_rangefinder.parm}"
 
 DEFAULTS=/ardupilot/Tools/autotest/default_params/copter.parm
 IFS=',' read -ra extra <<< "$PARAMS"

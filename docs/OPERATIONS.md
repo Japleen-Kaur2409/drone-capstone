@@ -197,7 +197,8 @@ setup. Over water, the low-battery action must bring it back before it's too lat
 ### Landings and scoring
 | Command | What it does |
 |---|---|
-| `./sim.sh land calm` | Scored landing (scenarios: `calm`, `moderate`, `rough`) |
+| `./sim.sh verify` | Acceptance test: must land on the 15 cm tag in every run (`./sim.sh verify 0 1 2 3 4` for more seeds) |
+| `./sim.sh land calm` | Scored landing (scenarios: `calm`, `moderate`, `rough`, `ontag`) |
 | `./sim.sh land rough --stabilised` | With the 2-DOF platform |
 | `./sim.sh land calm --show` | With a live camera window |
 | `./sim.sh land calm --no-vision` | GPS-only baseline (no precision landing) |
@@ -230,7 +231,7 @@ column -s, -t < logs/landings.csv
 | Command | What it does |
 |---|---|
 | Edit `config/plnd.parm`, then any `./sim.sh land` | Permanent param changes, loaded on every reset |
-| `PARAMS=plnd.parm,mine.parm ./sim.sh up` | Load extra param files from `config/` (from stopped) |
+| `PARAMS=plnd.parm,sitl_rangefinder.parm,mine.parm ./sim.sh up` | Load extra param files from `config/` (from stopped) |
 | `PARAMS=plnd.parm,plnd_sitl_beacon.parm ./sim.sh up` | ArduPilot's built-in fake beacon instead of our vision |
 | Change `COPTER_TAG` in `docker/sitl/Dockerfile`, then `. scripts/env.sh && docker-compose build` | Different ArduPilot version (~15 min rebuild) |
 
@@ -261,4 +262,5 @@ pip install -r requirements.txt
 | `docker-credential-desktop not found` | Run docker by hand only after `. scripts/env.sh` |
 | `No such file sim/scenarios/...json` | `git pull` (scenarios used to be YAML) |
 | Param change didn't do anything | Check the name exists in 4.7: `param show NAME`. Unknown names are silently ignored (e.g. `LAND_SPEED` became `LAND_SPD_MS`) |
-| Rough-sea landings miss by ~2 m | Known open issue; see README results |
+| Rough-sea landings ~0.6 m off | Known limit of ArduPilot's built-in tracking on a fast-swaying deck; see SITL_GUIDE.md section 6 |
+| `PLND_ALT_MIN`/`ALT_MAX` set but no rangefinder | Retries never happen. Keep `sitl_rangefinder.parm` in `PARAMS`, or set both to 0 |

@@ -1,0 +1,7 @@
+# Simulated downward rangefinder (SITL only). On the real drone, configure the real one instead
+# (e.g. a TFmini-S class lidar: RNGFND1_TYPE 20, on a serial port) with the same range limits.
+# Precision landing needs it for PLND_ALT_MIN / PLND_ALT_MAX.
+RNGFND1_TYPE     100
+RNGFND1_MIN      0.2
+RNGFND1_MAX      12
+RNGFND1_ORIENT   25

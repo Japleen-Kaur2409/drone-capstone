@@ -1,9 +1,16 @@
 {
-  "_comment": "Landing pad layout. Deck frame: origin = landing point, x forward, y right (metres). Large marker for acquisition from altitude, small marker at the landing point for the last metre.",
+  "_comment": "Landing pad layout. Deck frame: origin = landing point, x forward, y right (metres). 3x3 grid: large marker (id 0) for acquisition from altitude, small marker (id 1) at the landing point, medium markers (ids 2-8) covering the rest of the pad so some marker stays in view in the last metre even when the deck sways. Any visible subset gives the landing point (one combined PnP).",
   "dictionary": "DICT_4X4_50",
   "size": 1.5,
   "markers": [
-    {"id": 0, "size": 0.50, "x": 0.42, "y": 0.0},
-    {"id": 1, "size": 0.15, "x": 0.0,  "y": 0.0}
+    {"id": 0, "size": 0.50, "x": 0.42,  "y": 0.0},
+    {"id": 1, "size": 0.15, "x": 0.0,   "y": 0.0},
+    {"id": 2, "size": 0.22, "x": 0.42,  "y": -0.5},
+    {"id": 3, "size": 0.22, "x": 0.42,  "y": 0.5},
+    {"id": 4, "size": 0.22, "x": 0.0,   "y": -0.5},
+    {"id": 5, "size": 0.22, "x": 0.0,   "y": 0.5},
+    {"id": 6, "size": 0.22, "x": -0.45, "y": -0.5},
+    {"id": 7, "size": 0.22, "x": -0.45, "y": 0.0},
+    {"id": 8, "size": 0.22, "x": -0.45, "y": 0.5}
   ]
 }

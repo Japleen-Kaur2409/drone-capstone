@@ -2,6 +2,7 @@
 # One entry point for the project.
 #   ./sim.sh up                      start SITL (builds the image the first time)
 #   ./sim.sh land [scenario] [opts]  fresh SITL + one scored landing (calm|moderate|rough or a .json path)
+#   ./sim.sh verify [seeds]          acceptance test: must land ON the tag every time (default seeds 0 1 2)
 #   ./sim.sh matrix                  all scenarios, with/without vision and platform
 #   ./sim.sh console                 MAVProxy console (detach: Ctrl-P Ctrl-Q)
 #   ./sim.sh down                    stop SITL
@@ -53,6 +54,21 @@ case "$cmd" in
     console) docker_env; docker attach sitl ;;
     battery) $PY -m scripts.battery_reset "$@" ;;
     matrix)  docker_env; up; scripts/run_matrix.sh ;;
+    verify)
+        docker_env
+        seeds="${*:-0 1 2}"
+        fails=0
+        for s in $seeds; do
+            restart >/dev/null
+            if out=$($PY -m scripts.land_mission --scenario sim/scenarios/ontag.json --seed "$s" \
+                    --require-on-tag --log logs/verify.csv 2>&1); then rc=0; else rc=1; fi
+            echo "seed $s: $(echo "$out" | grep -E "^(PASS|FAIL)" || echo "FAIL: mission did not finish")"
+            fails=$((fails + rc))
+        done
+        echo
+        if [ "$fails" -eq 0 ]; then echo "VERIFY PASSED: landed on the tag in every run ($seeds)"
+        else echo "VERIFY FAILED: $fails run(s) missed the tag"; exit 1; fi
+        ;;
     land)
         docker_env
         scen="${1:-calm}"
@@ -61,5 +77,5 @@ case "$cmd" in
         restart
         $PY -m scripts.land_mission --scenario "$scen" "$@"
         ;;
-    *) sed -n '2,11p' "$0" | sed 's/^# //' ;;
+    *) sed -n '2,12p' "$0" | sed 's/^# //' ;;
 esac

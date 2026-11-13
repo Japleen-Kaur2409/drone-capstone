@@ -56,6 +56,18 @@ def test_small_marker_takes_over_low(setup):
     assert abs(det.distance - 0.4) < 0.02
 
 
+def test_pad_stays_visible_low_and_off_centre(setup):
+    # last metre on a swaying deck: drone up to ~0.7 m off the landing point must still see
+    # some marker, and the landing point must still come out right
+    cam, pad, camera, detector = setup
+    rpy = (D(2), D(-3), D(20))
+    for veh in ([0.6, 0.3, -0.8], [-0.5, -0.6, -0.9], [0.1, 0.65, -0.7]):
+        det = detector.detect(camera.render(veh, rpy, [0, 0, 0], (D(4), D(2), 0)))
+        assert det is not None, f"pad lost at {veh}"
+        est = ap_target_ned(det, veh, rpy)
+        assert np.hypot(*est[:2]) < 0.03
+
+
 def test_big_marker_acquires_high(setup):
     cam, pad, camera, detector = setup
     det = detector.detect(camera.render([0, 0, -9], (0, 0, 0), [1, 1, 0], (0, 0, 0)))

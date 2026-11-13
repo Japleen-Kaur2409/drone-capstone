@@ -1,18 +1,28 @@
-# Precision landing from our ArUco vision node (MAVLink LANDING_TARGET)
-# PLND_TYPE 1 = MAVLink, PLND_EST_TYPE 1 = Kalman filter
+# Precision landing from our ArUco vision node (MAVLink LANDING_TARGET).
+# Values tuned in SITL on the rough-sea scenario; see docs/SITL_GUIDE.md section 6 for the evidence.
 PLND_ENABLED     1
 PLND_TYPE        1
-PLND_EST_TYPE    1
-# If the target is lost low down, climb and retry instead of landing blind
+# 0 = raw measurements. The Kalman filter (1), with or without moving-target mode (PLND_OPTIONS 1),
+# lags and overshoots a deck that sways every few seconds: rough-sea error ~1.9 m vs ~0.6 m raw.
+PLND_EST_TYPE    0
+PLND_OPTIONS     0
+# If the target is lost, descend for PLND_TIMEOUT s, then climb and retry (up to RET_MAX times).
+# 1 s rather than the default 4 s, so a retry can happen before the drone reaches the ground.
 PLND_STRICT      1
 PLND_RET_MAX     4
-PLND_TIMEOUT     4
-# Only descend once within 2.5 m of the target
+PLND_TIMEOUT     1
+# Pause descent while further than this from the target. Tighter gating (0.3 m) made landings
+# 4x slower and no more accurate.
 PLND_XY_DIST_MAX 2.5
-PLND_ALT_MIN     0.3
-PLND_ALT_MAX     20
-# Vision pipeline latency (s)
+# Need a rangefinder (config/sitl_rangefinder.parm in SITL). Below ALT_MIN keep landing even if the
+# pad leaves the camera view, which always happens in the last ~0.5 m. Above ALT_MAX the camera
+# can't resolve the pad, so losing it is no reason to retry. Without a rangefinder set both to 0,
+# otherwise ArduPilot treats a lost target as out of range and never retries.
+PLND_ALT_MIN     0.5
+PLND_ALT_MAX     10
+# Vision pipeline latency (s). Measure on the real companion computer.
 PLND_LAG         0.05
-# Descent speeds (m/s; 4.7 renamed LAND_SPEED/LAND_SPEED_HIGH in cm/s to these)
+# Descent speeds, m/s (4.7 renamed LAND_SPEED/LAND_SPEED_HIGH, cm/s, to these).
+# A faster final descent (0.7) was less accurate in rough sea.
 LAND_SPD_MS      0.4
 LAND_SPD_HIGH_MS 1.2

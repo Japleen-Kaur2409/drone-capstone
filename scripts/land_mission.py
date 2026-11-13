@@ -23,6 +23,10 @@ from vision.detector import PadDetector
 from vision.landing_target import ardupilot_los_body, send_landing_target, target_angles
 from vision.pad import Camera, Pad
 
+LANDING_TAG_ID = 1             # marker at the landing point in config/pad.json
+DRONE_HALF_FOOTPRINT_M = 0.25  # X500 v2 landing gear ~0.5 m across: "on pad" leaves this margin
+MAX_SAFE_TILT_DEG = 5.0        # deck tilt at touchdown considered safe for the landing gear
+
 MSG_RATES_HZ = {
     mavutil.mavlink.MAVLINK_MSG_ID_ATTITUDE: 50,
     mavutil.mavlink.MAVLINK_MSG_ID_LOCAL_POSITION_NED: 50,
@@ -97,6 +101,8 @@ def main():
     p.add_argument("--show", action="store_true")
     p.add_argument("--log", default="logs/landings.csv")
     p.add_argument("--trace", help="per-frame CSV (pose vs pad, detections) for debugging")
+    p.add_argument("--require-on-tag", action="store_true",
+                   help="exit non-zero unless the touchdown point is inside the landing tag")
     args = p.parse_args()
 
     cam = Camera.load("config/cam.json")
@@ -213,6 +219,13 @@ def main():
 
     err_n, err_e, tilt = touch if touch else (float("nan"),) * 3
     err = math.hypot(err_n, err_e)
+    # touchdown in the pad's own frame (x forward, y right)
+    ch, sh = math.cos(deck.heading), math.sin(deck.heading)
+    err_x, err_y = ch * err_n + sh * err_e, -sh * err_n + ch * err_e
+    tag = pad.marker(LANDING_TAG_ID)
+    on_tag = bool(touch) and max(abs(err_x - tag.x), abs(err_y - tag.y)) <= tag.size / 2
+    on_pad = bool(touch) and max(abs(err_x), abs(err_y)) <= pad.size / 2 - DRONE_HALF_FOOTPRINT_M
+    tilt_ok = bool(touch) and tilt <= MAX_SAFE_TILT_DEG
     plnd_msgs = [s for s in v.statustext if "PrecLand" in s or "Plnd" in s]
     row = {
         "time": datetime.now().isoformat(timespec="seconds"),
@@ -222,6 +235,9 @@ def main():
         "seed": args.seed,
         "result": result,
         "error_m": round(err, 3),
+        "on_tag": int(on_tag),
+        "on_pad": int(on_pad),
+        "tilt_ok": int(tilt_ok),
         "err_n": round(err_n, 3),
         "err_e": round(err_e, 3),
         "vz_touch": round(vz_touch, 2),
@@ -235,13 +251,23 @@ def main():
     for k, val in row.items():
         print(f"  {k:16s} {val}")
 
-    os.makedirs(os.path.dirname(args.log), exist_ok=True)
+    os.makedirs(os.path.dirname(args.log) or ".", exist_ok=True)
+    if os.path.exists(args.log):
+        with open(args.log) as f:
+            if f.readline().strip() != ",".join(row):
+                # columns changed since this log was started: keep the old one aside
+                os.rename(args.log, args.log.replace(".csv", f"_old_{int(time.time())}.csv"))
     new = not os.path.exists(args.log)
     with open(args.log, "a", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(row))
         if new:
             w.writeheader()
         w.writerow(row)
+    if args.require_on_tag:
+        print("\nPASS: landed on the tag" if on_tag else
+              f"\nFAIL: touchdown {err:.3f} m from the landing point, outside the "
+              f"{tag.size * 100:g} cm tag")
+        sys.exit(0 if on_tag else 1)
     sys.exit(0 if result == "landed" else 1)
 
 

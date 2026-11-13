@@ -6,7 +6,7 @@ services:
     environment:
       - HOME_LOC=${HOME_LOC:--35.363261,149.165230,584,353}
       - SPEEDUP=${SPEEDUP:-1}
-      - PARAMS=${PARAMS:-plnd.parm}
+      - PARAMS=${PARAMS:-plnd.parm,sitl_rangefinder.parm}
     volumes:
       - ./config:/config:ro
     ports:

@@ -76,7 +76,7 @@ over water it may lose it. Simulation lets us:
 |---|---|---|
 | Companion computer | Runs `aruco_node.py` | Raspberry Pi 5 or Jetson Orin Nano. A Pi 5 is enough for ArUco at 640×480, 15–30 Hz |
 | Downward camera | Sees the pad | Global-shutter is strongly preferred: rolling shutter smears markers on a vibrating drone. Wide-ish lens (~70° FOV, like the sim) |
-| Downward rangefinder | Height above the deck | Strongly recommended at sea: the barometer measures height above the *sea*, not the moving deck. E.g. a small lidar (TFmini-S class) |
+| Downward rangefinder | Height above the deck | **Needed**: `plnd.parm` uses it (`PLND_ALT_MIN/MAX`), and at sea the barometer measures height above the *sea*, not the moving deck. E.g. a small lidar (TFmini-S class) |
 | Landing pad | The target | Printed to the exact sizes in `pad.json`, matte (no glare), rigid, flat |
 | Telemetry radio | QGroundControl link | Standard SiK/Holybro radio |
 
@@ -94,7 +94,9 @@ over water it may lose it. Simulation lets us:
    param load config/plnd.parm
    ```
 5. Set the camera position relative to the drone's centre: `PLND_CAM_POS_X/Y/Z` (metres).
-6. If a rangefinder is fitted, configure it (`RNGFND1_*` params) and check it in QGroundControl.
+6. Configure the rangefinder (`RNGFND1_*` params, e.g. a TFmini-S on a serial port) and check its
+   reading in QGroundControl. `plnd.parm` relies on it for `PLND_ALT_MIN`/`ALT_MAX`. If you fly
+   without one, set both to 0, or ArduPilot will never retry a landing.
 
 ### 5.3 Companion computer setup
 
@@ -132,8 +134,9 @@ geofence set.
 
 ### 5.5 Marine-specific things to plan for
 
-- **Moving target:** set `PLND_OPTIONS 1` (moving landing target) for a moving deck. This is the
-  first thing to try for the rough-sea failure in the simulator.
+- **Moving target:** ArduPilot's moving-target mode (`PLND_OPTIONS 1`) made rough-sea landings
+  *worse* in simulation (its filter lags a fast-swaying deck). We use raw measurements instead. A
+  deck-motion-aware controller on the companion computer is the next step beyond that (roadmap).
 - **Height above deck:** use a rangefinder; the barometer can't see deck heave.
 - **Getting to the boat:** GPS waypoint to the boat, or ArduPilot's Follow mode with a GPS on the
   boat, then switch to LAND once the camera sees the pad.
@@ -166,7 +169,9 @@ Ways to connect it to this software later:
 | 1 | SITL + MAVProxy in Docker, one-command runner | Done |
 | 2 | Vision pipeline + ArduPilot precision landing, verified against ArduPilot's source | Done |
 | 3 | Sea-state scenarios, platform model, scored landings | Done |
-| 4 | Fix rough-sea landings (`PLND_OPTIONS 1`, tuning, `--trace` diagnosis) | **Next** |
+| 4 | Rough-sea landings: 3×3 marker pad, rangefinder, retry/estimator tuning (2–3 m → ~0.6 m) | Done |
+| 4b | Acceptance test: `./sim.sh verify` (lands on the 15 cm tag) | Done |
+| 4c | Deck-motion-aware guidance on the companion (predict sway, time touchdown) to get rough sea below ~0.3 m | Future |
 | 5 | Camera calibration script (ChArUco → `cam.json`) | To do |
 | 6 | Choose companion computer, camera, rangefinder | To do (team decision) |
 | 7 | Desk and bench tests with real camera (5.4 steps 1–2) | When hardware arrives |

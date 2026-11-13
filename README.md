@@ -10,6 +10,10 @@ written to move onto the real drone unchanged. Only the camera input and the con
   [docs/PROJECT_AND_HARDWARE.md](docs/PROJECT_AND_HARDWARE.md)
 - **Operating the drone: QGroundControl, console commands, simulator experiments, battery
   warnings, every run command:** [docs/OPERATIONS.md](docs/OPERATIONS.md)
+- **How the simulation works in detail, and recipes for testing things:**
+  [docs/SITL_GUIDE.md](docs/SITL_GUIDE.md)
+- **How to test (every kind of test, fair comparisons, traces):** [docs/TESTING.md](docs/TESTING.md)
+- **What we tested and the results:** [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md)
 - **This file:** how to run it, what every file does, and what to change.
 
 ---
@@ -28,7 +32,8 @@ resets the simulated drone, and flies one scored landing:
 3. The simulated camera sees the pad. Our detector sends `LANDING_TARGET` to ArduPilot and the
    console shows `PrecLand: Target Found`.
 4. Switches to LAND. ArduPilot steers onto the pad using our vision.
-5. Prints the score (`error_m` = distance from pad centre) and adds a row to `logs/landings.csv`.
+5. Prints the score (`error_m` = distance from pad centre, `on_tag` = landed on the 15 cm landing
+   tag) and adds a row to `logs/landings.csv`.
 
 `--show` opens a window with what the drone's camera sees.
 
@@ -38,6 +43,7 @@ resets the simulated drone, and flies one scored landing:
 |---|---|
 | `./sim.sh land calm` | Fresh simulator + one scored landing. Scenarios: `calm`, `moderate`, `rough`, or any `.json` path |
 | `./sim.sh land rough --stabilised` | Same, with the 2-DOF platform switched on |
+| `./sim.sh verify` | **Acceptance test:** lands on a still deck from 1.5 m off, three times; fails unless every touchdown is on the 15 cm tag |
 | `./sim.sh matrix` | Batch: every scenario, with/without vision, with/without platform. Prints a summary table |
 | `./sim.sh test` | Offline tests (no simulator needed, ~2 s) |
 | `./sim.sh up` | Start the simulator and leave it running |
@@ -132,15 +138,16 @@ Environment variables (set before `./sim.sh up`, e.g. `SPEEDUP=2 ./sim.sh up`):
 |---|---|---|
 | `HOME_LOC` | `-35.363261,149.165230,584,353` | Start location: lat, lon, altitude (m), heading |
 | `SPEEDUP` | 1 | Run the sim faster than real time |
-| `PARAMS` | `plnd.parm` | Comma-separated param files from `config/` to load at boot |
+| `PARAMS` | `plnd.parm,sitl_rangefinder.parm` | Comma-separated param files from `config/` to load at boot. Keep `sitl_rangefinder.parm` in the list |
 
 ### `config/` — settings shared by the simulator and, later, the real drone
 
 | File | What it does | What to change |
 |---|---|---|
-| `plnd.parm` | ArduPilot precision-landing params: `PLND_ENABLED`, `PLND_TYPE 1` (MAVLink), Kalman filter, retry behaviour, descent speeds | **The main tuning file.** E.g. `PLND_OPTIONS 1` (moving target), `LAND_SPD_MS` (final descent speed), `PLND_XY_DIST_MAX` (how close before descending), `PLND_LAG` (camera latency). Loaded on every reset |
+| `plnd.parm` | ArduPilot precision-landing params: `PLND_TYPE 1` (MAVLink), raw estimator, fast retry, rangefinder altitude limits, descent speeds. Each value is commented with why it was chosen | **The main tuning file.** E.g. `PLND_OPTIONS 1` (moving target), `LAND_SPD_MS` (final descent speed), `PLND_XY_DIST_MAX` (how close before descending), `PLND_LAG` (camera latency). Loaded on every reset |
 | `plnd_sitl_beacon.parm` | ArduPilot's built-in fake beacon instead of our vision. Sanity check that precision landing itself works | Use with `PARAMS=plnd.parm,plnd_sitl_beacon.parm ./sim.sh up`, then fly by hand from the console |
-| `pad.json` | Landing pad layout: 0.50 m marker (seen from up to ~10 m) and 0.15 m marker at the landing point (for the last metre). ArUco dictionary `DICT_4X4_50` | Marker sizes, positions, add markers. **Must match the printed pad exactly** |
+| `sitl_rangefinder.parm` | Simulated downward rangefinder (12 m). Precision landing needs it for `PLND_ALT_MIN`/`ALT_MAX` | Range limits. On the real drone, configure the real rangefinder instead |
+| `pad.json` | Landing pad layout: 3×3 grid on a 1.5 m pad. 0.50 m marker (id 0, seen from up to ~10 m), 0.15 m **landing tag** at the landing point (id 1), seven 0.22 m markers (ids 2–8) so some marker stays in view in the last metre. ArUco dictionary `DICT_4X4_50` | Marker sizes, positions, add markers. **Must match the printed pad exactly** |
 | `cam.json` | Camera intrinsics: 640×480, ~70° field of view, no distortion (sim values) | Replace with the real camera's calibration. Change resolution/FOV to test other cameras |
 
 ArduPilot 4.7 renamed some params (e.g. `LAND_SPEED` in cm/s became `LAND_SPD_MS` in m/s).
@@ -155,6 +162,7 @@ Unknown names are **silently ignored**. After changing `plnd.parm`, check it too
 | `deck.py` | Ship deck motion from a scenario (sums of sine waves) plus the platform model (cancels `stab_gain` of roll/pitch) | A smarter platform model (lag, servo limits), random waves |
 | `scenarios/calm.json` | Small motion, 1.5 m approach error | |
 | `scenarios/moderate.json` | ±5° roll, ±0.15 m heave, ±0.4 m sway | |
+| `scenarios/ontag.json` | Still deck, 1.5 m approach error. Used by `./sim.sh verify` | |
 | `scenarios/rough.json` | ±10° roll, ±0.35 m heave, ±0.8 m sway, 2.5 m approach error | |
 
 Scenario format (copy one to make your own, then run `./sim.sh land myfile` or pass a path):
@@ -204,13 +212,13 @@ real moving deck is the next step for that.
 
 | File | What it checks |
 |---|---|
-| `test_vision.py` | Renders known poses → detects → encodes → **decodes the way ArduPilot does** → checks the drone would steer to the right spot (within a few cm). Also: small marker takes over low down, big marker works high up, message packing, and that the platform reduces tilt. Run `./sim.sh test` after every vision change |
+| `test_vision.py` | 12 tests. Renders known poses → detects → encodes → **decodes the way ArduPilot does** → checks the drone would steer to the right spot (within a few cm). Also: the pad stays visible low and off-centre, small marker takes over low down, big marker works high up, message packing, and that the platform reduces tilt. Details: [docs/TESTING.md](docs/TESTING.md) |
 
 ### `logs/` (not in git)
 
 | File | Contents |
 |---|---|
-| `landings.csv` | One row per landing: scenario, platform on/off, vision on/off, `error_m`, `vz_touch` (touchdown speed), `deck_tilt_deg`, first detection altitude, detection rate, duration, precision-landing messages |
+| `landings.csv` | One row per landing: scenario, platform on/off, vision on/off, `error_m`, `on_tag` (inside the 15 cm tag), `on_pad` (≥0.25 m inside the pad edge), `tilt_ok` (pad tilt ≤ 5°), `vz_touch` (touchdown speed), `deck_tilt_deg`, first detection altitude, detection rate, duration, precision-landing messages |
 | `matrix_*.csv` | Results of each `./sim.sh matrix` |
 | `trace*.csv` | Per-frame traces from `--trace` |
 
@@ -253,17 +261,20 @@ next reset; put permanent ones in `config/plnd.parm`.
 5. If a landing looks wrong, add `--trace logs/trace.csv` and look at it frame by frame.
 6. Commit and push when it helps.
 
-## 8. Current results (Copter 4.7.2, seed 0)
+## 8. Current results (Copter 4.7.2, final config, seeds 0/1/2)
 
-| Scenario | Landing error |
-|---|---|
-| Calm, GPS only (no vision) | 1.44 m |
-| Calm, vision | **0.06 m** |
-| Moderate, platform off / on | 0.28 / 0.31 m |
-| Rough, platform off / on | **2.04 / 2.32 m**: not solved yet |
+| Scenario | Mean / worst error | On tag | On pad | Touchdown tilt ≤ 5° |
+|---|---|---|---|---|
+| Still deck (`./sim.sh verify`) | **0.03 m** | **3/3** | 3/3 | 3/3 |
+| Calm, GPS only (no vision) | 1.45 / 1.57 m | 0/3 | 0/3 | 3/3 |
+| Calm, vision | **0.07 / 0.07 m** | **3/3** | 3/3 | 3/3 |
+| Moderate, platform off / on | 0.36 / 0.36 m | 0/3 | 3/3 | 2/3 → **3/3** |
+| Rough, platform off / on | 0.62 / 0.61 m | 0/3 | 2/3 | 0/3 → **3/3** |
 
-The platform cuts touchdown tilt (rough: 8.7° → 1.4°) but doesn't reduce position error, because
-in this model it only cancels tilt.
+Rough sea started at 2.0–3.4 m. Tracing found four fixes: a config bug that disabled retries, the
+raw estimator, a 3×3 marker pad, and a rangefinder. The ~0.6 m left is lag behind the deck's sway,
+the limit of stock ArduPilot precision landing. The platform makes touchdown tilt safe in every
+rough-sea run. Every experiment: [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md).
 
 ## 9. What you can do with this
 
@@ -280,6 +291,6 @@ in this model it only cancels tilt.
   calibrated.
 - **Regression check**: run `./sim.sh matrix` after any change to make sure nothing got worse.
 
-Open work: fix rough-sea landings, a camera calibration script, a Gazebo setup with real deck
-physics, and the platform controller interface. See
+Open work: deck-motion-aware guidance to get rough sea below ~0.3 m, a camera calibration script, a
+Gazebo setup with real deck physics, and the platform controller interface. See
 [docs/PROJECT_AND_HARDWARE.md](docs/PROJECT_AND_HARDWARE.md).

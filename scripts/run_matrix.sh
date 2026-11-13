@@ -11,7 +11,7 @@ SEEDS=${SEEDS:-0}
 run() {
     sitl_restart || return
     echo "== $*"
-    $PY -m scripts.land_mission --log "$LOG" "$@" | grep -E "^  (result|error_m|vz_touch|deck_tilt)"
+    $PY -m scripts.land_mission --log "$LOG" "$@" | grep -E "^  (result|error_m|on_tag|on_pad|tilt_ok|deck_tilt)"
 }
 
 for seed in $SEEDS; do
