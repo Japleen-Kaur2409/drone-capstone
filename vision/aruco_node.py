@@ -25,13 +25,17 @@ def main():
     p.add_argument("--pad", default="config/pad.json")
     p.add_argument("--rate", type=float, default=15.0)
     p.add_argument("--show", action="store_true")
+    p.add_argument("--no-mav", action="store_true",
+                   help="desk test: detect and print only, no flight controller")
     args = p.parse_args()
 
     cam = Camera.load(args.cam_config)
     detector = PadDetector(cam, Pad.load(args.pad))
-    conn = mavutil.mavlink_connection(args.conn, baud=args.baud, source_component=191)
-    conn.wait_heartbeat(timeout=30)
-    print(f"Connected to sys {conn.target_system}")
+    conn = None
+    if not args.no_mav:
+        conn = mavutil.mavlink_connection(args.conn, baud=args.baud, source_component=191)
+        conn.wait_heartbeat(timeout=30)
+        print(f"Connected to sys {conn.target_system}")
 
     src = int(args.camera) if args.camera.isdigit() else args.camera
     cap = cv2.VideoCapture(src)
@@ -49,7 +53,8 @@ def main():
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         det = detector.detect(gray)
         if det:
-            send_landing_target(conn, det, int(t0 * 1e6))
+            if conn:
+                send_landing_target(conn, det, int(t0 * 1e6))
             ax, ay, d = target_angles(det.tvec)
             print(f"ids={det.ids} dist={d:5.2f} m ax={ax:+.3f} ay={ay:+.3f} err={det.reproj_px:.2f}px")
         if args.show:
