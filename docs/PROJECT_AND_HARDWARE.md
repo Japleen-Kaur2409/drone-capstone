@@ -120,7 +120,7 @@ over water it may lose it. Simulation lets us:
 
 | Step | Setup | Pass when |
 |---|---|---|
-| 1. Desk test | Webcam on a laptop, printed pad: `python -m vision.aruco_node --no-mav --show` | Distance printed matches a tape measure within a few cm; angles change sign correctly when you move the pad left/right/forward/back |
+| 1. Desk test | Laptop camera, pad printed from `./sim.sh markers` at the labelled size: `./sim.sh camera` | Markers detected steadily; after calibration, distance matches a tape measure within a few cm; angles change sign correctly when you move the pad left/right/forward/back |
 | 2. Bench, props off | Companion + camera + Pixhawk on the drone, connected to QGroundControl | `aruco_node` prints detections at ~15 Hz while connected to the Pixhawk; moving the pad under the drone changes the angles the right way. |
 | 3. Hover over a static pad, on land | Low altitude, pilot ready on the RC in Loiter | QGC shows `PrecLand: Target Found`. Switching to LAND tracks onto the pad |
 | 4. Precision landing on land | Approach from 1–2 m offset at 5–8 m | Repeated landings within ~10 cm, like the sim |

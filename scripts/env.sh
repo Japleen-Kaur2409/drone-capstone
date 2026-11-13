@@ -1,16 +1,22 @@
 # Docker / Python environment for this repo. Source it: `. scripts/env.sh`
-# Works with Colima (starts it if needed) or Docker Desktop.
+# Works with Colima (starts it if needed) or Docker Desktop. Docker is only touched
+# when a simulator command calls docker_env.
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/.." && pwd)"
 
-if command -v colima >/dev/null 2>&1; then
-    colima status >/dev/null 2>&1 || colima start --cpu 4 --memory 8 --disk 40
-    export DOCKER_HOST="unix://$HOME/.colima/default/docker.sock"
-    # project-local Docker config avoids a stale Docker Desktop credential helper
-    mkdir -p "$REPO/.docker"
-    [ -f "$REPO/.docker/config.json" ] || echo '{}' > "$REPO/.docker/config.json"
-    export DOCKER_CONFIG="$REPO/.docker"
-fi
+docker_env() {
+    if command -v colima >/dev/null 2>&1; then
+        colima status >/dev/null 2>&1 || colima start --cpu 4 --memory 8 --disk 40
+        export DOCKER_HOST="unix://$HOME/.colima/default/docker.sock"
+        # project-local Docker config avoids a stale Docker Desktop credential helper
+        mkdir -p "$REPO/.docker"
+        [ -f "$REPO/.docker/config.json" ] || echo '{}' > "$REPO/.docker/config.json"
+        export DOCKER_CONFIG="$REPO/.docker"
+    fi
+}
+
+# Sourced by hand (`. scripts/env.sh`): set Docker up straight away
+[ "${ENV_SH_LAZY:-0}" = 1 ] || docker_env
 
 if command -v docker-compose >/dev/null 2>&1; then
     COMPOSE="docker-compose"

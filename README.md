@@ -41,6 +41,8 @@ resets the simulated drone, and flies one scored landing:
 | `./sim.sh up` | Start the simulator and leave it running |
 | `./sim.sh console` | MAVProxy console for typing commands to the drone (leave with **Ctrl-P then Ctrl-Q**, not Ctrl-C) |
 | `./sim.sh down` | Stop the simulator |
+| `./sim.sh markers` | Write printable marker and pad images to `markers/`, each labelled with its exact print size |
+| `./sim.sh camera` | Desk test: live ArUco detection on your computer's camera, no drone or simulator needed (Esc quits). `--camera 1` for another camera |
 | `./sim.sh` | Show this list |
 
 ### Options for `./sim.sh land`
@@ -112,7 +114,7 @@ uses the same detector and message code and talks to the Pixhawk over a serial c
 | `docker-compose.yml` | Defines the `sitl` container: ports 14550/14551, mounts `config/`, passes `HOME_LOC`, `SPEEDUP`, `PARAMS` | Change ports, start location, which param files load |
 | `requirements.txt` | Python packages: pymavlink, MAVProxy, OpenCV (with ArUco), numpy, pytest | Adding a library |
 | `pytest.ini` | Lets `pytest` find the code | Rarely |
-| `.gitignore` | Keeps `.venv/`, `.docker/`, `logs/` and flight logs out of git | Adding new generated files |
+| `.gitignore` | Keeps `.venv/`, `.docker/`, `logs/`, `markers/` and flight logs out of git | Adding new generated files |
 
 ### `docker/sitl/` — the simulated drone
 
@@ -190,6 +192,7 @@ real moving deck is the next step for that.
 |---|---|
 | `land_mission.py` | The scored closed-loop landing (what `./sim.sh land` runs). See flags in section 1 |
 | `run_matrix.sh` | Batch of landings (what `./sim.sh matrix` runs). `SEEDS="0 1 2"` for more runs per case |
+| `make_markers.py` | Printable markers and full pad image from `pad.json` (what `./sim.sh markers` runs) |
 | `smoke_test.py` | Basic check without vision: arm, take off 10 m, land. `python scripts/smoke_test.py` while the sim is up |
 | `env.sh` | Shared setup: starts Colima, sets Docker variables, picks Python, reset/wait helpers |
 
@@ -267,7 +270,10 @@ in this model it only cancels tilt.
 - **Quantify the platform's value** across sea states, for the report.
 - **Stress test**: more noise or blur, a drifting ship, bigger waves, larger approach error.
 - **Ground-station practice**: plan and fly missions in QGroundControl against the simulator.
-- **Bench-test the real vision code** with a webcam and a printed marker (`python -m vision.aruco_node --no-mav --show`).
+- **Bench-test the real vision code** with your laptop camera: `./sim.sh markers`, open
+  `markers/marker1_15cm.png` on your phone or print it, then `./sim.sh camera`. Detection and tracking
+  work right away; `dist` is only accurate once the print matches `pad.json` sizes and the camera is
+  calibrated.
 - **Regression check**: run `./sim.sh matrix` after any change to make sure nothing got worse.
 
 Open work: fix rough-sea landings, a camera calibration script, a Gazebo setup with real deck
