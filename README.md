@@ -8,6 +8,8 @@ written to move onto the real drone unchanged. Only the camera input and the con
 
 - **Why this exists, how the team can use it, and how it carries over to the real drone:**
   [docs/PROJECT_AND_HARDWARE.md](docs/PROJECT_AND_HARDWARE.md)
+- **Operating the drone: QGroundControl, console commands, simulator experiments, battery
+  warnings, every run command:** [docs/OPERATIONS.md](docs/OPERATIONS.md)
 - **This file:** how to run it, what every file does, and what to change.
 
 ---
@@ -41,6 +43,7 @@ resets the simulated drone, and flies one scored landing:
 | `./sim.sh up` | Start the simulator and leave it running |
 | `./sim.sh console` | MAVProxy console for typing commands to the drone (leave with **Ctrl-P then Ctrl-Q**, not Ctrl-C) |
 | `./sim.sh down` | Stop the simulator |
+| `./sim.sh battery [percent]` | Refill the simulated battery (default 100 %); fixes QGC "battery low/dead" warnings |
 | `./sim.sh markers` | Write printable marker and pad images to `markers/`, each labelled with its exact print size |
 | `./sim.sh camera` | Desk test: live ArUco detection on your computer's camera, no drone or simulator needed (Esc quits). `--camera 1` for another camera |
 | `./sim.sh` | Show this list |
@@ -193,6 +196,7 @@ real moving deck is the next step for that.
 | `land_mission.py` | The scored closed-loop landing (what `./sim.sh land` runs). See flags in section 1 |
 | `run_matrix.sh` | Batch of landings (what `./sim.sh matrix` runs). `SEEDS="0 1 2"` for more runs per case |
 | `make_markers.py` | Printable markers and full pad image from `pad.json` (what `./sim.sh markers` runs) |
+| `battery_reset.py` | Battery refill (what `./sim.sh battery` runs) |
 | `smoke_test.py` | Basic check without vision: arm, take off 10 m, land. `python scripts/smoke_test.py` while the sim is up |
 | `env.sh` | Shared setup: starts Colima, sets Docker variables, picks Python, reset/wait helpers |
 

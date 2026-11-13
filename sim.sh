@@ -5,6 +5,7 @@
 #   ./sim.sh matrix                  all scenarios, with/without vision and platform
 #   ./sim.sh console                 MAVProxy console (detach: Ctrl-P Ctrl-Q)
 #   ./sim.sh down                    stop SITL
+#   ./sim.sh battery [percent]       refill the simulated battery (default 100)
 #   ./sim.sh test                    offline tests
 #   ./sim.sh markers                 printable markers + pad images in markers/
 #   ./sim.sh camera [opts]           desk test: live ArUco detection on this computer's camera (Esc quits)
@@ -50,6 +51,7 @@ case "$cmd" in
     up)      docker_env; up ;;
     down)    docker_env; $COMPOSE down ;;
     console) docker_env; docker attach sitl ;;
+    battery) $PY -m scripts.battery_reset "$@" ;;
     matrix)  docker_env; up; scripts/run_matrix.sh ;;
     land)
         docker_env
@@ -59,5 +61,5 @@ case "$cmd" in
         restart
         $PY -m scripts.land_mission --scenario "$scen" "$@"
         ;;
-    *) sed -n '2,10p' "$0" | sed 's/^# //' ;;
+    *) sed -n '2,11p' "$0" | sed 's/^# //' ;;
 esac
