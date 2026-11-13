@@ -3,49 +3,45 @@
 Holybro X500 v2 + Pixhawk 6C, **ArduPilot Copter**. ArduCopter SITL + MAVProxy run in Docker
 (Colima on Apple Silicon); vision / guidance scripts run on the Mac.
 
-## One-time setup (macOS, Apple Silicon)
+## Quick start
 
 ```bash
-brew install colima docker docker-compose
-colima start --cpu 4 --memory 8 --disk 40
-# ~/.docker/config.json still points at Docker Desktop's credential helper, so use a
-# project-local config + Colima's socket (run in every new shell, or add to ~/.zshrc):
-export DOCKER_CONFIG=$PWD/.docker DOCKER_HOST=unix://$HOME/.colima/default/docker.sock
-mkdir -p .docker && [ -f .docker/config.json ] || echo '{}' > .docker/config.json
+./sim.sh land calm --show       # starts everything, flies one scored landing
+```
+
+`sim.sh` starts Colima if needed, sets up Docker, builds the SITL image the first time (~15 min),
+and resets the simulator before every landing. Run it from any shell; venv optional.
+
+| Command | Does |
+|---------|------|
+| `./sim.sh land [calm\|moderate\|rough] [--stabilised] [--show]` | Fresh SITL + one scored landing |
+| `./sim.sh matrix` | All scenarios, with/without vision and platform |
+| `./sim.sh test` | Offline tests |
+| `./sim.sh up` / `./sim.sh down` | Start / stop SITL |
+| `./sim.sh console` | MAVProxy console (detach: Ctrl-P Ctrl-Q) |
+
+## One-time setup (new machine)
+
+```bash
+brew install colima docker docker-compose       # macOS; or install Docker Desktop
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-docker-compose build          # ~10-20 min, compiles ArduCopter for arm64
 ```
 
-## Run
-
-```bash
-docker-compose up -d sitl     # start SITL + MAVProxy
-docker attach sitl            # MAVProxy console (detach: Ctrl-P Ctrl-Q)
-.venv/bin/python scripts/smoke_test.py   # arm, takeoff 10 m, land
-docker-compose down
-```
+Using plain `docker`/`docker-compose` by hand on a Colima Mac: first run `. scripts/env.sh`.
 
 | Port | Use |
 |------|-----|
 | TCP 127.0.0.1:14550 | GCS (QGroundControl / Mission Planner, TCP link) |
 | TCP 127.0.0.1:14551 | Python scripts (`tcp:127.0.0.1:14551`) |
 
-Options: `HOME_LOC="lat,lon,alt,hdg" SPEEDUP=2 docker-compose up -d sitl`.
+SITL options: `HOME_LOC="lat,lon,alt,hdg" SPEEDUP=2 docker-compose up -d sitl`.
 ArduCopter version defaults to the current stable (`Copter-4.7.2`), matching what goes on the
 Pixhawk 6C. Change it with `docker-compose build --build-arg COPTER_TAG=Copter-4.x.y`.
 
 ## Precision landing (ArUco, closed loop in SITL)
 
-```bash
-.venv/bin/python -m pytest                          # offline: render -> detect -> LANDING_TARGET -> ArduPilot decode
-docker-compose up -d sitl
-.venv/bin/python -m scripts.land_mission --scenario sim/scenarios/calm.json --show
-.venv/bin/python -m scripts.land_mission --scenario sim/scenarios/rough.json --stabilised
-```
-
-Each run appends a scored row (touchdown error vs pad centre, descent speed, deck tilt, detection
-rate) to `logs/landings.csv`. Restart SITL between runs (`docker-compose restart sitl`) so each one
-starts on the ground at home.
+Each `./sim.sh land` run appends a scored row (touchdown error vs pad centre, descent speed, deck
+tilt, detection rate) to `logs/landings.csv`. Add `--trace logs/trace.csv` for a per-frame log.
 
 | Path | What |
 |------|------|

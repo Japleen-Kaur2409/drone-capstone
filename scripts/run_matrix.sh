@@ -4,15 +4,12 @@
 #   SEEDS="0 1 2" scripts/run_matrix.sh
 set -uo pipefail
 cd "$(dirname "$0")/.."
-export DOCKER_CONFIG=${DOCKER_CONFIG:-$PWD/.docker}
-export DOCKER_HOST=${DOCKER_HOST:-unix://$HOME/.colima/default/docker.sock}
-PY=.venv/bin/python
+. scripts/env.sh
 LOG=${LOG:-logs/matrix_$(date +%Y%m%d_%H%M%S).csv}
 SEEDS=${SEEDS:-0}
 
 run() {
-    docker-compose restart sitl >/dev/null 2>&1
-    sleep 12
+    sitl_restart || return
     echo "== $*"
     $PY -m scripts.land_mission --log "$LOG" "$@" | grep -E "^  (result|error_m|vz_touch|deck_tilt)"
 }
